@@ -1,7 +1,7 @@
 $(function () {
 
     var albums = [
-        { title: "AC/DC Live", artist: "AC/DC", genre: "Hard rock" },
+        { title: "AC-DC Live", artist: "AC-DC", genre: "Hard rock" },
         { title: "Worship Music", artist: "Anthrax", genre: "Metal" },
         { title: "No Control", artist: "Bad Religion", genre: "Punk rock" },
         { title: "Black Sabbath", artist: "Black Sabbath", genre: "Metal" }
@@ -151,11 +151,11 @@ $(function () {
      
         urlFilter: function (param, type) {
             if(param === "artist") {
-                directory.filterArtist = type;
-                directory.trigger("change:filterArtist");
+                albumsList.filterArtist = type;
+                albumsList.trigger("change:filterArtist");
             } else if(param === "genre") {
-                directory.filterGenre = type;
-                directory.trigger("change:filterGenre");
+                albumsList.filterGenre = type;
+                albumsList.trigger("change:filterGenre");
             }
         }
     });

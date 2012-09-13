@@ -8,3 +8,4 @@ TODO:
 - Add editing capabilities.
 - Filters are currently mutually exclusive, need to figure out a way to be able to use both filters.
 - Similarly, the filter router URL thing isn't done very neatly either.
+- Fix slashes in artist name (AC-DC?)
