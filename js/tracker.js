@@ -9,7 +9,10 @@ $(function () {
     
     var Album = Backbone.Model.extend({
         defaults: {
-            photo: "/img/placeholder.jpg"
+            photo: "/img/placeholder.jpg",
+            title: "N/A",
+            artist: "N/A",
+            genre: "N/A"
         }
     });
     
@@ -22,6 +25,27 @@ $(function () {
         className: "album-container",
         template: _.template($("#albumTemplate").html()),
         
+        events: {
+            "click button.delete": "deleteAlbum"
+        },
+        
+        deleteAlbum: function () {
+            var removedArtist = this.model.get("artist");
+            var removedGenre = this.model.get("genre");
+         
+            this.model.destroy();
+         
+            this.remove();
+         
+            if (_.indexOf(albumsList.getItem("artist"), removedArtist) === -1) {
+                albumsList.$el.find("#filter-artists select").children("[value='" + removedArtist + "']").remove();
+            }
+            
+            if (_.indexOf(albumsList.getItem("genre"), removedGenre) === -1) {
+                albumsList.$el.find("#filter-genres select").children("[value='" + removedGenre + "']").remove();
+            }
+        },
+        
         render: function() {
             this.$el.html(this.template(this.model.toJSON()));
             return this;
@@ -30,6 +54,12 @@ $(function () {
     
     var AlbumListView = Backbone.View.extend({
         el: $("#albums"),
+        
+        events: {
+            "change #filter-artists select": "setArtistFilter",
+            "change #filter-genres select": "setGenreFilter",
+            "click #add": "addAlbum"
+        },
         
         initialize: function() {
             this.collection = new AlbumList(albums);
@@ -41,6 +71,8 @@ $(function () {
             this.on("change:filterArtist", this.filterByArtist, this);
             this.on("change:filterGenre", this.filterByGenre, this);
             this.collection.on("reset", this.render, this);
+            this.collection.on("add", this.renderAlbum, this);
+            this.collection.on("remove", this.removeAlbum, this);
         },
         
         render: function() {
@@ -90,11 +122,6 @@ $(function () {
             return select;
         },
         
-        events: {
-            "change #filter-artists select": "setArtistFilter",
-            "change #filter-genres select": "setGenreFilter"
-        },
-        
         setArtistFilter: function(e) {
             this.filterArtist = e.currentTarget.value;
             this.trigger("change:filterArtist");
@@ -141,6 +168,43 @@ $(function () {
                 this.collection.reset(filtered);
                 albumsRouter.navigate("filter/genre/" + filterGenre);
             }
+        },
+        
+        addAlbum: function(e) {
+            e.preventDefault();
+            
+            var formData = {};
+            $("#addAlbum").children("input").each(function (i, el) {
+                if($(el).val() !== "") {
+                    formData[el.id] = $(el).val();
+                }
+            });
+            
+            albums.push(formData);
+            
+            if(_.indexOf(this.getItem("artist"), formData.artist) === -1) {
+                this.$el.find("#filter-artists").find("select").remove().end().append(this.createArtistsSelect());
+            }
+            if(_.indexOf(this.getItem("genre"), formData.genre) === -1) {
+                this.$el.find("#filter-genres").find("select").remove().end().append(this.createGenressSelect());
+            }
+            
+            this.collection.add(new Album(formData));
+        
+        },
+        
+        removeAlbum: function(removedModel) {
+            var removed = removedModel.attributes;
+            
+            if (removed.photo === "/img/placeholder.jpg") {
+                delete removed.photo;
+            }
+            
+            _.each(albums, function (album) {
+                if (_.isEqual(album, removed)) {
+                    albums.splice(_.indexOf(albums, album), 1);
+                }
+            });        
         }
     });
     

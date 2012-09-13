@@ -19,6 +19,14 @@
 					<div id="filter-artists" class="filter"><label>Artist:</label></div>
 					<div id="filter-genres" class="filter"><label>Genre:</label></div>
 				</header>
+				<form id="addAlbum" action="#" class="clearfix">
+					<h2>Add a new album</h2>
+					<label for="photo">Photo:</label><input id="photo" type="file" />
+					<label for="title">Title:</label><input id="title" />
+					<label for="artist">Artist:</label><input id="artist" />
+					<label for="genre">Genre:</label><input id="genre" />
+					<button id="add">Add</button>
+				</form>
 			</div>
 		</div>
 		
@@ -38,6 +46,7 @@
 			<div class="title"><%= title %></div>
 			<div class="artist"><%= artist %></div>
 			<div class="genre"><%= genre %></div>
+			<button class="delete">Delete</button>
 		</script>
 	</body>
 </html>
