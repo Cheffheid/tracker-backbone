@@ -30,3 +30,8 @@ article.album-container {
 	padding: 10px;
 }
 
+.filter {
+	float: left;
+	padding: 0 10px;
+	margin: 10px 7px;
+}
