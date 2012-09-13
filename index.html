@@ -17,7 +17,7 @@
 			<article>
 				<header>
 					<h1></h1>
-					<div id="albums"></div>
+					<div id="albums" class="clearfix"></div>
 				</header>
 			</article>
 		</div>
@@ -32,9 +32,12 @@
 		<script src="js/tracker.js"></script>
 		
 		<script type="text/template" id="albumTemplate">
-			<img src="<%= photo %>" alt="<%= artist %> - <%= title %>" />
-			<h1><%= title %> - <%= artist %></h1>
-			<div><%= genre %></div>
+			<div class="imageContainer">
+				<img src="<%= photo %>" alt="<%= artist %> - <%= title %>" />
+			</div>
+			<div class="title"><%= title %></div>
+			<div class="artist"><%= artist %></div>
+			<div class="genre"><%= genre %></div>
 		</script>
 	</body>
 </html>

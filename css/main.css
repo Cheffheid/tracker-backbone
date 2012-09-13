@@ -1,0 +1,32 @@
+* { margin: 0; padding: 0; }
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+
+.clearfix {
+    *zoom: 1;
+}
+
+body {
+	background: #F7F7F7;
+}
+
+#main-container {
+	width: 50%;
+	margin: 0 auto;
+}
+
+article.album-container {
+	width: 20%;
+	float: left;
+	margin: 0 7px;
+	padding: 10px;
+}
+
