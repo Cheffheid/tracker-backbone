@@ -46,7 +46,19 @@
 			<div class="title"><%= title %></div>
 			<div class="artist"><%= artist %></div>
 			<div class="genre"><%= genre %></div>
+			<button class="edit">Edit</button>
 			<button class="delete">Delete</button>
+		</script>
+
+		<script id="albumEditTemplate" type="text/template">
+		<form action="#" class="editAlbum">
+			<input type="file" value="<%= photo %>" />
+			<input class="title" value="<%= title %>" />
+			<input class="artist" value="<%= artist %>" />
+			<input class="genre" value="<%= genre %>" />
+			<button class="save">Save</button>
+			<button class="cancel">Cancel</button>
+		</form>
 		</script>
 	</body>
 </html>

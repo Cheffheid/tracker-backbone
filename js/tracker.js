@@ -24,9 +24,51 @@ $(function () {
         tagName: "article",
         className: "album-container",
         template: _.template($("#albumTemplate").html()),
+        editTemplate: _.template($("#albumEditTemplate").html()),
         
         events: {
-            "click button.delete": "deleteAlbum"
+            "click button.delete": "deleteAlbum",
+            "click button.edit": "editAlbum",
+            "click button.save": "saveEdits",
+            "click button.cancel": "cancelEdit"
+        },
+        
+        editAlbum: function() {
+            this.$el.html(this.editTemplate(this.model.toJSON()));
+        },
+        
+        saveEdits: function(e) {
+            e.preventDefault();
+            
+            var formData = {};
+            var prev = this.model.previousAttributes();
+                
+            $(e.target).closest("form").find(":input").add(".photo").each(function() {
+                var el = $(this);
+                formData[el.attr("class")] = el.val();                
+            });
+            
+            if (formData.photo === "") {
+                delete formData.photo;
+            }
+            
+            this.model.set(formData);
+            
+            this.render();
+            
+            if (prev.photo === "/img/placeholder.png") {
+                delete prev.photo;
+            }
+            
+            _.each(albums, function(album) {
+                if(_.isEqual(album, prev)) {
+                    albums.splice(_.indexOf(albums, album), 1, formData);
+                }            
+            });
+        },
+        
+        cancelEdit: function() {
+            this.render();
         },
         
         deleteAlbum: function () {
@@ -186,7 +228,7 @@ $(function () {
                 this.$el.find("#filter-artists").find("select").remove().end().append(this.createArtistsSelect());
             }
             if(_.indexOf(this.getItem("genre"), formData.genre) === -1) {
-                this.$el.find("#filter-genres").find("select").remove().end().append(this.createGenressSelect());
+                this.$el.find("#filter-genres").find("select").remove().end().append(this.createGenresSelect());
             }
             
             this.collection.add(new Album(formData));
