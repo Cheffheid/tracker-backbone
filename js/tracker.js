@@ -1,24 +1,40 @@
 $(function () {
 
-    var albums = [
-        { title: "AC-DC Live", artist: "AC-DC", genre: "Hard rock" },
-        { title: "Worship Music", artist: "Anthrax", genre: "Metal" },
-        { title: "No Control", artist: "Bad Religion", genre: "Punk rock" },
-        { title: "Black Sabbath", artist: "Black Sabbath", genre: "Metal" }
-    ];
-    
+// Basic Album model, has a photo, a title, an artist and genre
+
     var Album = Backbone.Model.extend({
         defaults: {
             photo: "/img/placeholder.jpg",
             title: "N/A",
             artist: "N/A",
             genre: "N/A"
+        },
+        
+        // Ensure it has at least a title
+        initialize: function() {
+            if(!this.get("title")) {
+                this.set({"title": this.defaults.title});
+            }
+        },
+        
+        // Remove it from the localStorage
+        clear: function() {
+            this.destroy();
         }
+        
     });
     
+    // Album collection
     var AlbumList = Backbone.Collection.extend({
-        model: Album
+        model: Album,
+        
+        localStorage: new Store("albums-backbone")
     });
+    
+    // Create a new global collection of Albums
+    var Albums = new AlbumList;
+    
+    
     
     var AlbumView = Backbone.View.extend({
         tagName: "article",
@@ -33,6 +49,16 @@ $(function () {
             "click button.cancel": "cancelEdit"
         },
         
+        initialize: function() {
+            this.model.on('change', this.render, this);
+            this.model.on('destroy', this.remove, this);
+        },
+        
+        render: function() {
+            this.$el.html(this.template(this.model.toJSON()));
+            return this;
+        },
+        
         editAlbum: function() {
             this.$el.html(this.editTemplate(this.model.toJSON()));
         },
@@ -41,7 +67,6 @@ $(function () {
             e.preventDefault();
             
             var formData = {};
-            var prev = this.model.previousAttributes();
                 
             $(e.target).closest("form").find(":input").add(".photo").each(function() {
                 var el = $(this);
@@ -52,19 +77,9 @@ $(function () {
                 delete formData.photo;
             }
             
-            this.model.set(formData);
+            this.model.save(formData);
             
             this.render();
-            
-            if (prev.photo === "/img/placeholder.png") {
-                delete prev.photo;
-            }
-            
-            _.each(albums, function(album) {
-                if(_.isEqual(album, prev)) {
-                    albums.splice(_.indexOf(albums, album), 1, formData);
-                }            
-            });
         },
         
         cancelEdit: function() {
@@ -72,55 +87,32 @@ $(function () {
         },
         
         deleteAlbum: function () {
-            var removedArtist = this.model.get("artist");
-            var removedGenre = this.model.get("genre");
-         
             this.model.destroy();
          
             this.remove();
-         
-            if (_.indexOf(albumsList.getItem("artist"), removedArtist) === -1) {
-                albumsList.$el.find("#filter-artists select").children("[value='" + removedArtist + "']").remove();
-            }
-            
-            if (_.indexOf(albumsList.getItem("genre"), removedGenre) === -1) {
-                albumsList.$el.find("#filter-genres select").children("[value='" + removedGenre + "']").remove();
-            }
-        },
-        
-        render: function() {
-            this.$el.html(this.template(this.model.toJSON()));
-            return this;
-        }        
+        }      
     });
     
     var AlbumListView = Backbone.View.extend({
         el: $("#albums"),
         
         events: {
-            "change #filter-artists select": "setArtistFilter",
-            "change #filter-genres select": "setGenreFilter",
             "click #add": "addAlbum"
         },
         
         initialize: function() {
-            this.collection = new AlbumList(albums);
-
             this.render();
-            this.$el.find("#filter-artists").append(this.createArtistsSelect());
-            this.$el.find("#filter-genres").append(this.createGenresSelect());
-
-            this.on("change:filterArtist", this.filterByArtist, this);
-            this.on("change:filterGenre", this.filterByGenre, this);
-            this.collection.on("reset", this.render, this);
-            this.collection.on("add", this.renderAlbum, this);
-            this.collection.on("remove", this.removeAlbum, this);
+            Albums.on("reset", this.render, this);
+            Albums.on("add", this.renderAlbum, this);
+            Albums.on("remove", this.removeAlbum, this);
+            
+            Albums.fetch();
         },
         
         render: function() {
             this.$el.find("article").remove();
         
-            _.each(this.collection.models, function(item) {
+            _.each(Albums.models, function(item) {
                 this.renderAlbum(item);
             }, this);
         },
@@ -130,86 +122,6 @@ $(function () {
                 model: item
             });
             this.$el.append(albumView.render().el);
-        },
-        
-        getItem: function(itemName) {
-            return _.uniq(this.collection.pluck(itemName));
-        },
-        
-        createArtistsSelect: function() {
-            var select = $("<select/>", {
-                    html: "<option value='all'>All</option>"
-                });
-                
-            _.each(this.getItem("artist"), function(item) {
-                var option = $("<option/>", {
-                    value: item,
-                    text: item
-                }).appendTo(select);
-            });
-            return select;
-        },
-        
-        createGenresSelect: function() {
-            var select = $("<select/>", {
-                    html: "<option value='all'>All</option>"
-                });
-                
-            _.each(this.getItem("genre"), function(item) {
-                var option = $("<option/>", {
-                    value: item,
-                    text: item
-                }).appendTo(select);
-            });
-            return select;
-        },
-        
-        setArtistFilter: function(e) {
-            this.filterArtist = e.currentTarget.value;
-            this.trigger("change:filterArtist");
-        },
-        
-        filterByArtist: function () {
-            $('#filter-genres select').val("All");
-            
-            if (this.filterArtist === "all") {
-                this.collection.reset(albums);
-                albumsRouter.navigate("filter/artist/all");
-            } else {
-                this.collection.reset(albums, { silent: true });
-                
-                var filterArtist = this.filterArtist,
-                    filtered = _.filter(this.collection.models, function (item) {
-                    return item.get("artist") === filterArtist;
-                });
-                
-                this.collection.reset(filtered);
-                albumsRouter.navigate("filter/artist/" + filterArtist);
-            }
-        },
-        
-        setGenreFilter: function(e) {
-            this.filterGenre = e.currentTarget.value;
-            this.trigger("change:filterGenre");
-        },
-        
-        filterByGenre: function () {
-            $('#filter-artists select').val("All");
-            
-            if (this.filterGenre === "all") {
-                this.collection.reset(albums);
-                albumsRouter.navigate("filter/genre/all");
-            } else {
-                this.collection.reset(albums, { silent: true });
-                
-                var filterGenre = this.filterGenre,
-                    filtered = _.filter(this.collection.models, function (item) {
-                    return item.get("genre") === filterGenre;
-                });
-                
-                this.collection.reset(filtered);
-                albumsRouter.navigate("filter/genre/" + filterGenre);
-            }
         },
         
         addAlbum: function(e) {
@@ -222,16 +134,7 @@ $(function () {
                 }
             });
             
-            albums.push(formData);
-            
-            if(_.indexOf(this.getItem("artist"), formData.artist) === -1) {
-                this.$el.find("#filter-artists").find("select").remove().end().append(this.createArtistsSelect());
-            }
-            if(_.indexOf(this.getItem("genre"), formData.genre) === -1) {
-                this.$el.find("#filter-genres").find("select").remove().end().append(this.createGenresSelect());
-            }
-            
-            this.collection.add(new Album(formData));
+           Albums.create(formData);
         
         },
         
@@ -250,23 +153,5 @@ $(function () {
         }
     });
     
-    var AlbumsRouter = Backbone.Router.extend({
-        routes: {
-            "filter/:param/:type": "urlFilter"
-        },
-     
-        urlFilter: function (param, type) {
-            if(param === "artist") {
-                albumsList.filterArtist = type;
-                albumsList.trigger("change:filterArtist");
-            } else if(param === "genre") {
-                albumsList.filterGenre = type;
-                albumsList.trigger("change:filterGenre");
-            }
-        }
-    });
-    
     var albumsList = new AlbumListView();
-    var albumsRouter = new AlbumsRouter();
-    Backbone.history.start();
 });
