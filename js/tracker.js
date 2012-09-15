@@ -9,149 +9,140 @@ $(function () {
             artist: "N/A",
             genre: "N/A"
         },
-        
+
         // Ensure it has at least a title
-        initialize: function() {
-            if(!this.get("title")) {
+        initialize: function () {
+            if (!this.get("title")) {
                 this.set({"title": this.defaults.title});
             }
         },
-        
+
         // Remove it from the localStorage
-        clear: function() {
+        clear: function () {
             this.destroy();
         }
-        
+
     });
-    
+
     // Album collection
     var AlbumList = Backbone.Collection.extend({
         model: Album,
-        
+
         localStorage: new Store("albums-backbone")
     });
-    
+
     // Create a new global collection of Albums
-    var Albums = new AlbumList;
-    
-    
-    
+    var Albums = new AlbumList();
+
     var AlbumView = Backbone.View.extend({
         tagName: "article",
         className: "album-container",
         template: _.template($("#albumTemplate").html()),
         editTemplate: _.template($("#albumEditTemplate").html()),
-        
+
         events: {
             "click button.delete": "deleteAlbum",
             "click button.edit": "editAlbum",
             "click button.save": "saveEdits",
             "click button.cancel": "cancelEdit"
         },
-        
-        initialize: function() {
+
+        initialize: function () {
             this.model.on('change', this.render, this);
             this.model.on('destroy', this.remove, this);
         },
-        
-        render: function() {
+
+        render: function () {
             this.$el.html(this.template(this.model.toJSON()));
             return this;
         },
-        
-        editAlbum: function() {
+
+        editAlbum: function () {
             this.$el.html(this.editTemplate(this.model.toJSON()));
         },
-        
-        saveEdits: function(e) {
+
+        saveEdits: function (e) {
             e.preventDefault();
-            
+
             var formData = {};
-                
-            $(e.target).closest("form").find(":input").add(".photo").each(function() {
+
+            $(e.target).closest("form").find(":input").add(".photo").each(function () {
                 var el = $(this);
-                formData[el.attr("class")] = el.val();                
+                formData[el.attr("class")] = el.val();
             });
-            
+
             if (formData.photo === "") {
                 delete formData.photo;
             }
-            
+
             this.model.save(formData);
-            
+
             this.render();
         },
-        
-        cancelEdit: function() {
+
+        cancelEdit: function () {
             this.render();
         },
-        
+
         deleteAlbum: function () {
             this.model.destroy();
-         
             this.remove();
-        }      
+        }
     });
-    
+
     var AlbumListView = Backbone.View.extend({
         el: $("#albums"),
-        
+
         events: {
             "click #add": "addAlbum"
         },
-        
-        initialize: function() {
+
+        initialize: function () {
             this.render();
             Albums.on("reset", this.render, this);
             Albums.on("add", this.renderAlbum, this);
             Albums.on("remove", this.removeAlbum, this);
-            
+
             Albums.fetch();
         },
-        
-        render: function() {
+
+        render: function () {
             this.$el.find("article").remove();
-        
-            _.each(Albums.models, function(item) {
+
+            _.each(Albums.models, function (item) {
                 this.renderAlbum(item);
             }, this);
         },
-        
-        renderAlbum: function(item) {
+
+        renderAlbum: function (item) {
             var albumView = new AlbumView({
                 model: item
             });
             this.$el.append(albumView.render().el);
         },
-        
-        addAlbum: function(e) {
+
+        addAlbum: function (e) {
             e.preventDefault();
-            
+
             var formData = {};
             $("#addAlbum").children("input").each(function (i, el) {
-                if($(el).val() !== "") {
+                if ($(el).val() !== "") {
                     formData[el.id] = $(el).val();
                 }
             });
-            
-           Albums.create(formData);
-        
+
+            Albums.create(formData);
+
         },
-        
-        removeAlbum: function(removedModel) {
+
+        removeAlbum: function (removedModel) {
             var removed = removedModel.attributes;
-            
+
             if (removed.photo === "/img/placeholder.jpg") {
                 delete removed.photo;
             }
-            
-            _.each(albums, function (album) {
-                if (_.isEqual(album, removed)) {
-                    albums.splice(_.indexOf(albums, album), 1);
-                }
-            });        
         }
     });
-    
+
     var albumsList = new AlbumListView();
 });
